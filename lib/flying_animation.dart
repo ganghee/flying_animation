@@ -2,12 +2,12 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-class FlyAnimationWidget extends StatefulWidget {
+class FlyingAnimationWidget extends StatefulWidget {
   final AnimationController animationController;
   final Icon icon;
   final Icon flyIcon;
 
-  const FlyAnimationWidget({
+  const FlyingAnimationWidget({
     super.key,
     required this.animationController,
     required this.icon,
@@ -15,10 +15,10 @@ class FlyAnimationWidget extends StatefulWidget {
   });
 
   @override
-  State<FlyAnimationWidget> createState() => _FlyAnimationWidgetState();
+  State<FlyingAnimationWidget> createState() => _FlyingAnimationWidgetState();
 }
 
-class _FlyAnimationWidgetState extends State<FlyAnimationWidget>
+class _FlyingAnimationWidgetState extends State<FlyingAnimationWidget>
     with TickerProviderStateMixin {
   OverlayEntry? overlayEntry;
   late final Animation<double> opacityAnimation =
