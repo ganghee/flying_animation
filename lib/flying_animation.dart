@@ -10,8 +10,12 @@ class FlyingAnimationWidget extends StatefulWidget {
 
   const FlyingAnimationWidget({
     super.key,
+    this.icon = const Icon(
+      Icons.add,
+      color: Colors.transparent,
+      size: 20,
+    ),
     required this.animationController,
-    required this.icon,
     required this.flyIcon,
   });
 
@@ -55,15 +59,16 @@ class _FlyingAnimationWidgetState extends State<FlyingAnimationWidget>
         final offset =
             (flyWidgetKey.currentContext?.findRenderObject() as RenderBox)
                 .localToGlobal(Offset.zero);
+        final sizeDiff =
+            (((widget.flyIcon.size ?? 0) - (widget.icon.size ?? 24)) / 2)
+                .toInt();
         return Stack(
           alignment: Alignment.center,
           children: <Widget>[
             _FlyWidget(
               iconOffset: offset,
               animationController: flyAnimationController,
-              sizeDiff:
-                  (((widget.flyIcon.size ?? 0) - (widget.icon.size ?? 0)) / 2)
-                      .toInt(),
+              sizeDiff: sizeDiff,
               flyIcon: widget.flyIcon,
             ),
             widget.icon,
