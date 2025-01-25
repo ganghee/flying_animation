@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 class FlyingAnimationWidget extends StatefulWidget {
@@ -110,51 +111,14 @@ class _FlyWidget extends StatefulWidget {
 
 class _FlyWidgetState extends State<_FlyWidget> {
   late final List<Offset> _pathOffsets;
-  late final Animation<double> positionAnimation;
-  late final Animation<double> opacityAnimation;
+  late final Animation<double> _positionAnimation;
+  late final Animation<double> _opacityAnimation;
 
   @override
   void initState() {
-    _pathOffsets = [
-      Offset(
-        widget.iconOffset.dx + Random().nextInt(20) - 10,
-        widget.iconOffset.dy + 0,
-      ),
-      Offset(
-        widget.iconOffset.dx + Random().nextInt(20) - 10,
-        widget.iconOffset.dy - 10,
-      ),
-      Offset(
-        widget.iconOffset.dx + Random().nextInt(20) - 10,
-        widget.iconOffset.dy - 20,
-      ),
-      Offset(
-        widget.iconOffset.dx + Random().nextInt(20) - 10,
-        widget.iconOffset.dy - 30,
-      ),
-      Offset(
-        widget.iconOffset.dx + Random().nextInt(20) - 10,
-        widget.iconOffset.dy - 40,
-      ),
-      Offset(
-        widget.iconOffset.dx + Random().nextInt(20) - 10,
-        widget.iconOffset.dy - 50,
-      ),
-      Offset(
-        widget.iconOffset.dx + Random().nextInt(20) - 10,
-        widget.iconOffset.dy - 60,
-      ),
-    ];
-    positionAnimation =
-        Tween<double>(begin: 0, end: _pathOffsets.length - 1).animate(
-      CurvedAnimation(
-          parent: widget.animationController, curve: Curves.easeInOut),
-    )..addListener(() {
-            if (mounted) {
-              setState(() {});
-            }
-          });
-    opacityAnimation =
+    _pathOffsets = setPathOffset();
+    _positionAnimation = setPositionAnimation();
+    _opacityAnimation =
         Tween<double>(begin: 1, end: 0).animate(widget.animationController);
     super.initState();
   }
@@ -162,13 +126,16 @@ class _FlyWidgetState extends State<_FlyWidget> {
   @override
   Widget build(BuildContext context) {
     final Offset currentOffset =
-        _getInterpolatedOffset(positionAnimation.value);
+        _getInterpolatedOffset(_positionAnimation.value);
 
     return Positioned(
-      top: currentOffset.dy - widget.sizeDiff,
-      left: currentOffset.dx - widget.sizeDiff,
+      left: currentOffset.dx -
+          widget.sizeDiff -
+          _pathOffsets[0].dx +
+          widget.iconOffset.dx,
+      top: currentOffset.dy,
       child: Opacity(
-        opacity: opacityAnimation.value,
+        opacity: _opacityAnimation.value,
         child: widget.flyIcon,
       ),
     );
@@ -176,9 +143,42 @@ class _FlyWidgetState extends State<_FlyWidget> {
 
   Offset _getInterpolatedOffset(double animationValue) {
     int startIndex = animationValue.floor();
-    int endIndex = (animationValue.ceil()).clamp(0, _pathOffsets.length - 1);
+    int endIndex = (animationValue.ceil()).clamp(1, _pathOffsets.length - 1);
     double t = animationValue - startIndex;
 
     return Offset.lerp(_pathOffsets[startIndex], _pathOffsets[endIndex], t)!;
+  }
+
+  List<Offset> setPathOffset() {
+    final List<double> randomYOffsets = [0];
+
+    for (int i = 1; i < 7; i++) {
+      randomYOffsets.add(randomYOffsets[i - 1] - Random().nextInt(20) - 20);
+    }
+    return randomYOffsets.mapIndexed((index, yOffset) {
+      final xOffset =
+          Random().nextInt((index + 1) * 5) - Random().nextInt((index + 1) * 5);
+      final Offset startOffset = Offset(
+        widget.iconOffset.dx,
+        widget.iconOffset.dy - widget.sizeDiff,
+      );
+      return Offset(
+        startOffset.dx + xOffset,
+        startOffset.dy + yOffset,
+      );
+    }).toList();
+  }
+
+  Animation<double> setPositionAnimation() {
+    return Tween<double>(begin: 0, end: _pathOffsets.length - 1).animate(
+      CurvedAnimation(
+        parent: widget.animationController,
+        curve: Curves.easeInOut,
+      ),
+    )..addListener(() {
+        if (mounted) {
+          setState(() {});
+        }
+      });
   }
 }
