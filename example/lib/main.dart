@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fly_animation/flying_animation.dart';
+import 'package:fly_animation/flying_icon.dart';
 
 void main() {
   runApp(const MyApp());
@@ -50,7 +50,7 @@ class _MyHomePageState extends State<MyHomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: FlyingAnimationWidget(
+        child: FlyingIconWidget(
           animationController: animationController,
           icon: Icon(
             color: Colors.blue,
