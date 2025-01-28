@@ -72,13 +72,13 @@ class _FlyingIconWidgetState extends State<FlyingIconWidget>
   OverlayEntry createFlyIconOverlay({
     required AnimationController flyAnimationController,
   }) {
+    final offset =
+        (flyWidgetKey.currentContext?.findRenderObject() as RenderBox)
+            .localToGlobal(Offset.zero);
+    final sizeDiff =
+        ((widget.flyIcon.size ?? 0) - (widget.icon.size ?? _defaultSize));
     return OverlayEntry(
       builder: (context) {
-        final offset =
-            (flyWidgetKey.currentContext?.findRenderObject() as RenderBox)
-                .localToGlobal(Offset.zero);
-        final double sizeDiff =
-            ((widget.flyIcon.size ?? 0) - (widget.icon.size ?? _defaultSize));
         return Stack(
           alignment: Alignment.center,
           children: <Widget>[
@@ -88,7 +88,11 @@ class _FlyingIconWidgetState extends State<FlyingIconWidget>
               sizeDiff: sizeDiff / 2,
               flyIcon: widget.flyIcon,
             ),
-            widget.icon,
+            Positioned(
+              left: offset.dx,
+              top: offset.dy,
+              child: widget.icon,
+            ),
           ],
         );
       },
