@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
+const double _defaultSize = 40;
+
 class FlyingImageWidget extends StatefulWidget {
   final AnimationController animationController;
   final String? image;
@@ -15,10 +17,10 @@ class FlyingImageWidget extends StatefulWidget {
   const FlyingImageWidget({
     super.key,
     this.image,
-    this.imageWidth = 24,
-    this.imageHeight = 24,
-    this.flyImageWidth = 24,
-    this.flyImageHeight = 24,
+    this.imageWidth = _defaultSize,
+    this.imageHeight = _defaultSize,
+    this.flyImageWidth = _defaultSize,
+    this.flyImageHeight = _defaultSize,
     required this.animationController,
     required this.flyImage,
   });
@@ -35,61 +37,36 @@ class _FlyingImageWidgetState extends State<FlyingImageWidget>
   final GlobalKey flyWidgetKey = GlobalKey();
 
   @override
-  void initState() {
+  initState() {
     final int? milliSecond =
         widget.animationController.duration?.inMilliseconds;
     if (milliSecond == null || milliSecond == 0) {
       widget.animationController.duration = const Duration(seconds: 1);
     }
+
     widget.animationController.addStatusListener((status) {
       final flyAnimationController = AnimationController(vsync: this);
       if (status.isAnimating) {
         flyAnimationController.duration = widget.animationController.duration;
         flyAnimationController.forward();
-        createFlyIconOverlay(flyAnimationController: flyAnimationController);
-      } else if (status.isCompleted) {
-        removeFlyIconOverlay();
-        if (context.mounted) {
-          flyAnimationController.reset();
-        }
+        final OverlayEntry overlayEntry = createFlyIconOverlay(
+          flyAnimationController: flyAnimationController,
+        );
+        Overlay.of(context).insert(overlayEntry);
+        Future.delayed(Duration(milliseconds: milliSecond ?? 1000), () {
+          overlayEntry.remove();
+          overlayEntry.dispose();
+          flyAnimationController.dispose();
+        });
       }
     });
     super.initState();
   }
 
-  createFlyIconOverlay({required AnimationController flyAnimationController}) {
-    overlayEntry = OverlayEntry(
-      builder: (context) {
-        final offset =
-            (flyWidgetKey.currentContext?.findRenderObject() as RenderBox)
-                .localToGlobal(Offset.zero);
-        final sizeDiff =
-            (((widget.flyImageWidth) - (widget.imageWidth)) / 2).toInt();
-        return Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            _FlyWidget(
-              iconOffset: offset,
-              animationController: flyAnimationController,
-              sizeDiff: sizeDiff,
-              flyImage: widget.flyImage,
-            ),
-            Image.network(
-              widget.image!,
-              width: widget.imageWidth,
-              height: widget.imageHeight,
-            ),
-          ],
-        );
-      },
-    );
-    Overlay.of(context).insert(overlayEntry!);
-  }
-
-  removeFlyIconOverlay() {
-    overlayEntry?.remove();
-    overlayEntry?.dispose();
-    overlayEntry = null;
+  @override
+  void dispose() {
+    widget.animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -103,19 +80,58 @@ class _FlyingImageWidgetState extends State<FlyingImageWidget>
       ),
     );
   }
+
+  OverlayEntry createFlyIconOverlay({
+    required AnimationController flyAnimationController,
+  }) {
+    final offset =
+        (flyWidgetKey.currentContext?.findRenderObject() as RenderBox)
+            .localToGlobal(Offset.zero);
+    final sizeDiff = ((widget.flyImageWidth) - (widget.imageWidth));
+    return OverlayEntry(
+      builder: (context) {
+        return Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            _FlyWidget(
+              iconOffset: offset,
+              animationController: flyAnimationController,
+              sizeDiff: sizeDiff / 2,
+              flyImage: widget.flyImage,
+              flyImageWidth: widget.flyImageWidth,
+              flyImageHeight: widget.flyImageHeight,
+            ),
+            Positioned(
+              left: offset.dx,
+              top: offset.dy,
+              child: Image.network(
+                widget.image!,
+                width: widget.imageWidth,
+                height: widget.imageHeight,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _FlyWidget extends StatefulWidget {
   final AnimationController animationController;
   final Offset iconOffset;
-  final int sizeDiff;
+  final double sizeDiff;
   final String flyImage;
+  final double flyImageWidth;
+  final double flyImageHeight;
 
   const _FlyWidget({
     required this.animationController,
     required this.iconOffset,
     required this.sizeDiff,
     required this.flyImage,
+    required this.flyImageWidth,
+    required this.flyImageHeight,
   });
 
   @override
@@ -151,8 +167,8 @@ class _FlyWidgetState extends State<_FlyWidget> {
         opacity: _opacityAnimation.value,
         child: Image.network(
           widget.flyImage,
-          width: 42,
-          height: 42,
+          width: widget.flyImageWidth,
+          height: widget.flyImageHeight,
         ),
       ),
     );
