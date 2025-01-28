@@ -75,7 +75,7 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  fly_animation:
+  flying_animation:
     dependency: "direct main"
     description:
       path: ".."

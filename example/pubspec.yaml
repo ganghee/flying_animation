@@ -9,7 +9,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  fly_animation:
+  flying_animation:
     path: ../
 
 dev_dependencies:
