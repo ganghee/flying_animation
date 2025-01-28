@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
+const double _defaultSize = 24;
+
 class FlyingIconWidget extends StatefulWidget {
   final AnimationController animationController;
   final Icon icon;
@@ -13,7 +15,7 @@ class FlyingIconWidget extends StatefulWidget {
     this.icon = const Icon(
       Icons.add,
       color: Colors.transparent,
-      size: 20,
+      size: _defaultSize,
     ),
     required this.animationController,
     required this.flyIcon,
@@ -25,7 +27,6 @@ class FlyingIconWidget extends StatefulWidget {
 
 class _FlyingIconWidgetState extends State<FlyingIconWidget>
     with TickerProviderStateMixin {
-  OverlayEntry? overlayEntry;
   late final Animation<double> opacityAnimation =
       Tween<double>(begin: 1, end: 0).animate(widget.animationController);
   final GlobalKey flyWidgetKey = GlobalKey();
@@ -38,56 +39,28 @@ class _FlyingIconWidgetState extends State<FlyingIconWidget>
     if (milliSecond == null || milliSecond == 0) {
       widget.animationController.duration = const Duration(seconds: 1);
     }
+
     widget.animationController.addStatusListener((status) {
       final flyAnimationController = AnimationController(vsync: this);
       if (status.isAnimating) {
         flyAnimationController.duration = widget.animationController.duration;
         flyAnimationController.forward();
-        createFlyIconOverlay(flyAnimationController: flyAnimationController);
-      } else if (status.isCompleted) {
-        removeFlyIconOverlay();
-        if (context.mounted) {
-          flyAnimationController.reset();
-        }
+        final OverlayEntry overlayEntry = createFlyIconOverlay(
+          flyAnimationController: flyAnimationController,
+        );
+        Overlay.of(context).insert(overlayEntry);
+        Future.delayed(Duration(milliseconds: milliSecond ?? 1000), () {
+          overlayEntry.remove();
+          overlayEntry.dispose();
+          flyAnimationController.dispose();
+        });
       }
     });
   }
 
-  createFlyIconOverlay({required AnimationController flyAnimationController}) {
-    overlayEntry = OverlayEntry(
-      builder: (context) {
-        final offset =
-            (flyWidgetKey.currentContext?.findRenderObject() as RenderBox)
-                .localToGlobal(Offset.zero);
-        final sizeDiff =
-            (((widget.flyIcon.size ?? 0) - (widget.icon.size ?? 24)) / 2)
-                .toInt();
-        return Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            _FlyWidget(
-              iconOffset: offset,
-              animationController: flyAnimationController,
-              sizeDiff: sizeDiff,
-              flyIcon: widget.flyIcon,
-            ),
-            widget.icon,
-          ],
-        );
-      },
-    );
-    Overlay.of(context).insert(overlayEntry!);
-  }
-
-  removeFlyIconOverlay() {
-    overlayEntry?.remove();
-    overlayEntry?.dispose();
-    overlayEntry = null;
-  }
-
   @override
   void dispose() {
-    removeFlyIconOverlay();
+    widget.animationController.dispose();
     super.dispose();
   }
 
@@ -95,12 +68,38 @@ class _FlyingIconWidgetState extends State<FlyingIconWidget>
   Widget build(BuildContext context) {
     return Container(key: flyWidgetKey, child: widget.icon);
   }
+
+  OverlayEntry createFlyIconOverlay({
+    required AnimationController flyAnimationController,
+  }) {
+    return OverlayEntry(
+      builder: (context) {
+        final offset =
+            (flyWidgetKey.currentContext?.findRenderObject() as RenderBox)
+                .localToGlobal(Offset.zero);
+        final double sizeDiff =
+            ((widget.flyIcon.size ?? 0) - (widget.icon.size ?? _defaultSize));
+        return Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            _FlyWidget(
+              iconOffset: offset,
+              animationController: flyAnimationController,
+              sizeDiff: sizeDiff / 2,
+              flyIcon: widget.flyIcon,
+            ),
+            widget.icon,
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _FlyWidget extends StatefulWidget {
   final AnimationController animationController;
   final Offset iconOffset;
-  final int sizeDiff;
+  final double sizeDiff;
   final Icon flyIcon;
 
   const _FlyWidget({
