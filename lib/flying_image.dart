@@ -3,24 +3,14 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
-const double _defaultSize = 40;
-
 class FlyingImageWidget extends StatefulWidget {
   final AnimationController animationController;
-  final String? image;
-  final double imageWidth;
-  final double imageHeight;
-  final String flyImage;
-  final double flyImageWidth;
-  final double flyImageHeight;
+  final Widget? image;
+  final Widget flyImage;
 
   const FlyingImageWidget({
     super.key,
     this.image,
-    this.imageWidth = _defaultSize,
-    this.imageHeight = _defaultSize,
-    this.flyImageWidth = _defaultSize,
-    this.flyImageHeight = _defaultSize,
     required this.animationController,
     required this.flyImage,
   });
@@ -31,10 +21,10 @@ class FlyingImageWidget extends StatefulWidget {
 
 class _FlyingImageWidgetState extends State<FlyingImageWidget>
     with TickerProviderStateMixin {
-  OverlayEntry? overlayEntry;
   late final Animation<double> opacityAnimation =
       Tween<double>(begin: 1, end: 0).animate(widget.animationController);
-  final GlobalKey flyWidgetKey = GlobalKey();
+  final GlobalKey imageWidgetKey = GlobalKey();
+  final GlobalKey flyImageWidgetKey = GlobalKey();
 
   @override
   initState() {
@@ -49,7 +39,7 @@ class _FlyingImageWidgetState extends State<FlyingImageWidget>
       if (status.isAnimating) {
         flyAnimationController.duration = widget.animationController.duration;
         flyAnimationController.forward();
-        final OverlayEntry overlayEntry = createFlyIconOverlay(
+        final OverlayEntry overlayEntry = createFlyImageOverlay(
           flyAnimationController: flyAnimationController,
         );
         Overlay.of(context).insert(overlayEntry);
@@ -71,45 +61,52 @@ class _FlyingImageWidgetState extends State<FlyingImageWidget>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      key: flyWidgetKey,
-      child: Image.network(
-        widget.image!,
-        width: widget.imageWidth,
-        height: widget.imageHeight,
-      ),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        widget.image == null
+            ? const SizedBox()
+            : Builder(
+                key: imageWidgetKey,
+                builder: (BuildContext context) {
+                  return widget.image!;
+                },
+              ),
+        Opacity(
+          key: flyImageWidgetKey,
+          opacity: 0,
+          child: widget.flyImage,
+        ),
+      ],
     );
   }
 
-  OverlayEntry createFlyIconOverlay({
+  OverlayEntry createFlyImageOverlay({
     required AnimationController flyAnimationController,
   }) {
-    final offset =
-        (flyWidgetKey.currentContext?.findRenderObject() as RenderBox)
-            .localToGlobal(Offset.zero);
-    final sizeDiff = ((widget.flyImageWidth) - (widget.imageWidth));
+    final imageRenderBox =
+        imageWidgetKey.currentContext?.findRenderObject() as RenderBox?;
+    final imageOffset = imageRenderBox?.localToGlobal(Offset.zero);
+    final flyImageRenderBox =
+        flyImageWidgetKey.currentContext?.findRenderObject() as RenderBox;
+    final flyImageOffset = flyImageRenderBox.localToGlobal(Offset.zero);
     return OverlayEntry(
       builder: (context) {
         return Stack(
           alignment: Alignment.center,
           children: <Widget>[
             _FlyWidget(
-              iconOffset: offset,
+              flyOffset: flyImageOffset,
               animationController: flyAnimationController,
-              sizeDiff: sizeDiff / 2,
               flyImage: widget.flyImage,
-              flyImageWidth: widget.flyImageWidth,
-              flyImageHeight: widget.flyImageHeight,
             ),
-            Positioned(
-              left: offset.dx,
-              top: offset.dy,
-              child: Image.network(
-                widget.image!,
-                width: widget.imageWidth,
-                height: widget.imageHeight,
-              ),
-            ),
+            widget.image == null
+                ? const SizedBox()
+                : Positioned(
+                    left: imageOffset?.dx,
+                    top: imageOffset?.dy,
+                    child: widget.image!,
+                  ),
           ],
         );
       },
@@ -119,19 +116,13 @@ class _FlyingImageWidgetState extends State<FlyingImageWidget>
 
 class _FlyWidget extends StatefulWidget {
   final AnimationController animationController;
-  final Offset iconOffset;
-  final double sizeDiff;
-  final String flyImage;
-  final double flyImageWidth;
-  final double flyImageHeight;
+  final Offset flyOffset;
+  final Widget flyImage;
 
   const _FlyWidget({
     required this.animationController,
-    required this.iconOffset,
-    required this.sizeDiff,
+    required this.flyOffset,
     required this.flyImage,
-    required this.flyImageWidth,
-    required this.flyImageHeight,
   });
 
   @override
@@ -158,18 +149,11 @@ class _FlyWidgetState extends State<_FlyWidget> {
         _getInterpolatedOffset(_positionAnimation.value);
 
     return Positioned(
-      left: currentOffset.dx -
-          widget.sizeDiff -
-          _pathOffsets[0].dx +
-          widget.iconOffset.dx,
+      left: currentOffset.dx - _pathOffsets[0].dx + widget.flyOffset.dx,
       top: currentOffset.dy,
       child: Opacity(
         opacity: _opacityAnimation.value,
-        child: Image.network(
-          widget.flyImage,
-          width: widget.flyImageWidth,
-          height: widget.flyImageHeight,
-        ),
+        child: widget.flyImage,
       ),
     );
   }
@@ -192,8 +176,8 @@ class _FlyWidgetState extends State<_FlyWidget> {
       final xOffset =
           Random().nextInt((index + 1) * 5) - Random().nextInt((index + 1) * 5);
       final Offset startOffset = Offset(
-        widget.iconOffset.dx,
-        widget.iconOffset.dy - widget.sizeDiff,
+        widget.flyOffset.dx,
+        widget.flyOffset.dy,
       );
       return Offset(
         startOffset.dx + xOffset,
