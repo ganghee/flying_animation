@@ -1,6 +1,6 @@
 name: flying_animation
 description: "Animation package for fly effect"
-version: 0.0.3
+version: 0.0.4
 homepage: "https://github.com/ganghee/fly_animation"
 
 environment:
@@ -10,7 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  collection: ^1.19.0
 
 dev_dependencies:
   flutter_test:

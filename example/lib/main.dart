@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flying_animation/flying_image.dart';
 
 void main() {
@@ -53,8 +52,9 @@ class _MyHomePageState extends State<MyHomePage>
       body: Center(
         child: FlyingImageWidget(
           animationController: animationController,
-          flyImage: SvgPicture.asset('assets/ic_heart.svg'),
-          image: SvgPicture.asset('assets/ic_heart.svg'),
+          flyImage: Icon(Icons.favorite, color: Colors.red),
+          image: Icon(Icons.favorite, color: Colors.red),
+          flyHeight: 100,
         ),
       ),
       floatingActionButton: FloatingActionButton(

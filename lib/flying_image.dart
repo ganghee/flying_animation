@@ -1,16 +1,17 @@
 import 'dart:math';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 class FlyingImageWidget extends StatefulWidget {
   final AnimationController animationController;
   final Widget? image;
   final Widget flyImage;
+  final double? flyHeight;
 
   const FlyingImageWidget({
     super.key,
     this.image,
+    this.flyHeight = 100,
     required this.animationController,
     required this.flyImage,
   });
@@ -99,6 +100,7 @@ class _FlyingImageWidgetState extends State<FlyingImageWidget>
               flyOffset: flyImageOffset,
               animationController: flyAnimationController,
               flyImage: widget.flyImage,
+              flyHeight: widget.flyHeight ?? 200,
             ),
             widget.image == null
                 ? const SizedBox()
@@ -118,11 +120,13 @@ class _FlyWidget extends StatefulWidget {
   final AnimationController animationController;
   final Offset flyOffset;
   final Widget flyImage;
+  final double flyHeight;
 
   const _FlyWidget({
     required this.animationController,
     required this.flyOffset,
     required this.flyImage,
+    required this.flyHeight,
   });
 
   @override
@@ -167,22 +171,25 @@ class _FlyWidgetState extends State<_FlyWidget> {
   }
 
   List<Offset> setPathOffset() {
-    final List<double> randomYOffsets = [0];
-
+    final Offset startOffset = Offset(
+      widget.flyOffset.dx,
+      widget.flyOffset.dy,
+    );
+    final List<Offset> pathOffsets = [Offset.zero];
     for (int i = 1; i < 7; i++) {
-      randomYOffsets.add(randomYOffsets[i - 1] - Random().nextInt(20) - 20);
-    }
-    return randomYOffsets.mapIndexed((index, yOffset) {
       final xOffset =
-          Random().nextInt((index + 1) * 5) - Random().nextInt((index + 1) * 5);
-      final Offset startOffset = Offset(
-        widget.flyOffset.dx,
-        widget.flyOffset.dy,
+          Random().nextInt(i * 5) - Random().nextInt(i * 5).toDouble();
+      final yOffset = pathOffsets[i - 1].dy - Random().nextInt(20) - 20;
+      pathOffsets.add(
+        Offset(xOffset, yOffset),
       );
-      return Offset(
-        startOffset.dx + xOffset,
-        startOffset.dy + yOffset,
-      );
+    }
+    return pathOffsets.map((offset) {
+      return startOffset +
+          Offset(
+            offset.dx,
+            offset.dy * -(widget.flyHeight / pathOffsets.last.dy),
+          );
     }).toList();
   }
 
