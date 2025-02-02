@@ -50,20 +50,26 @@ class _MyHomePageState extends State<MyHomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: FlyingImageWidget(
-          animationController: animationController,
-          flyImage: Icon(Icons.favorite, color: Colors.red),
-          image: Icon(Icons.favorite, color: Colors.red),
-          flyHeight: 100,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FlyingImageWidget(
+              animationController: animationController,
+              flyImage: Icon(Icons.favorite, color: Colors.red),
+              image: Icon(Icons.favorite, color: Colors.red),
+              flyHeight: 100,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                if (!context.mounted) return;
+                animationController.reset();
+                animationController.forward();
+              },
+              child: const Text('Click me'),
+            ),
+          ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (!context.mounted) return;
-          animationController.reset();
-          animationController.forward();
-        },
-        child: const Icon(Icons.add),
       ),
     );
   }
