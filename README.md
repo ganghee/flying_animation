@@ -12,8 +12,16 @@ Also you can control speed using duration parameter of AnimationController.
 ```dart
 FlyingImageWidget(
   animationController: animationController,
-  flyImage: SvgPicture.asset('assets/ic_heart.svg'),
-  image: SvgPicture.asset('assets/ic_heart.svg'),
-  flyHeight: 100,
+  image: Icon(Icons.favorite, color: Colors.red),
+  flyImage: Icon(Icons.favorite, color: Colors.red),
 )
 ```
+
+## Parameters
+
+| name | Type                | required | Default Value | Usage                                                                                                                                                                                                                                             |
+|------|---------------------|----------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   animationController | AnimationController | true     | null          | You can controll animation using AnimationController class. <br/> The animation speed is set by duration parameter. <br/> If you start animation, ```_animationController.reset() _animationController.forward()``` must be implemented in order. |
+| image | Widget              | false    | null          | This widget is always covered of flying widget.                                                                                                                                                                                                   |
+| flyImage | Widget              | true     | null          | This widget randomly swings and flies upward.                                                                                                                                                                                                     |
+|    flyHeight      | double                 | false    | 100           | Flying widget can fly up to a specified height.                                                                                                                                                                                                   |
