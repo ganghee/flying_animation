@@ -3,10 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 class FlyingImageWidget extends StatefulWidget {
-  final AnimationController animationController;
   final Widget? image;
-  final Widget flyImage;
   final double? flyHeight;
+  final AnimationController animationController;
+  final Widget flyImage;
 
   const FlyingImageWidget({
     super.key,

@@ -54,10 +54,9 @@ class _MyHomePageState extends State<MyHomePage>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             FlyingImageWidget(
-              animationController: animationController,
-              flyImage: Icon(Icons.favorite, color: Colors.red),
               image: Icon(Icons.favorite, color: Colors.red),
-              flyHeight: 100,
+              flyImage: Icon(Icons.favorite, color: Colors.red),
+              animationController: animationController,
             ),
             const SizedBox(height: 20),
             ElevatedButton(
