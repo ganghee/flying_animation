@@ -45,18 +45,20 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
       final RenderBox? flyRenderBox =
           _flyWidgetKey.currentContext?.findRenderObject() as RenderBox?;
       final flyRenderBoxSize = flyRenderBox?.size ?? Size.zero;
-      final flyWidgetHeightAndHalfCoverWidgetHeight =
-          ((flyRenderBoxSize.height) + (coverRenderBoxSize.height) / 2);
       final startXOffset = widget.coverWidgetOffset.dx +
           (coverRenderBoxSize.width / 2) -
           (flyRenderBoxSize.width) / 2;
-      final startYOffset = widget.coverWidgetOffset.dy +
+      final centerCoverYOffset = widget.coverWidgetOffset.dy +
           (coverRenderBoxSize.height / 2) -
-          (flyRenderBoxSize.height) / 2 -
-          (widget.isTopStart ? flyWidgetHeightAndHalfCoverWidgetHeight : 0);
+          (flyRenderBoxSize.height) / 2;
+      final coverTopOffset =
+          widget.coverWidgetOffset.dy - flyRenderBoxSize.height;
       if (flyRenderBox != null) {
         setState(() {
-          _startOffset = Offset(startXOffset, startYOffset);
+          _startOffset = Offset(
+            startXOffset,
+            widget.isTopStart ? coverTopOffset : centerCoverYOffset,
+          );
         });
       }
     });
