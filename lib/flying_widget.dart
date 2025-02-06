@@ -1,115 +1,107 @@
-part of 'flying_image.dart';
+import 'dart:math';
 
-class _FlyWidget extends StatefulWidget {
-  final GlobalKey imageWidgetKey;
-  final AnimationController animationController;
-  final Offset imageOffset;
-  final Widget flyImage;
+import 'package:flutter/material.dart';
+
+part 'single_flying_widget.dart';
+
+class FlyingWidget extends StatefulWidget {
+  final Widget? coverWidget;
   final double flyHeight;
+  final AnimationController animationController;
+  final Widget child;
 
-  const _FlyWidget({
-    required this.imageWidgetKey,
+  const FlyingWidget({
+    super.key,
+    this.coverWidget,
+    this.flyHeight = 100,
     required this.animationController,
-    required this.imageOffset,
-    required this.flyImage,
-    required this.flyHeight,
+    required this.child,
   });
 
   @override
-  State<_FlyWidget> createState() => _FlyWidgetState();
+  State<FlyingWidget> createState() => _FlyingWidgetState();
 }
 
-class _FlyWidgetState extends State<_FlyWidget> {
-  late final List<Offset> _pathOffsets;
-  late final Animation<double> _positionAnimation;
-  late final Animation<double> _opacityAnimation;
-  final GlobalKey _overlayKey = GlobalKey();
-  Offset? _flyWidgetOffset;
+class _FlyingWidgetState extends State<FlyingWidget>
+    with TickerProviderStateMixin {
+  late final Animation<double> opacityAnimation =
+      Tween<double>(begin: 1, end: 0).animate(widget.animationController);
+  final GlobalKey coverWidgetKey = GlobalKey();
 
   @override
-  void initState() {
-    _pathOffsets = setPathOffset();
-    _positionAnimation = setPositionAnimation();
-    _opacityAnimation =
-        Tween<double>(begin: 1, end: 0).animate(widget.animationController);
-    super.initState();
+  initState() {
+    final int? milliSecond =
+        widget.animationController.duration?.inMilliseconds;
+    if (milliSecond == null || milliSecond == 0) {
+      widget.animationController.duration = const Duration(seconds: 1);
+    }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final RenderBox? imageRenderBox = widget.imageWidgetKey.currentContext
-          ?.findRenderObject() as RenderBox?;
-      final imageRenderBoxSize = imageRenderBox?.size;
-      final RenderBox? flyImageRenderBox =
-          _overlayKey.currentContext?.findRenderObject() as RenderBox?;
-      final flyRenderBoxSize = flyImageRenderBox?.size;
-      if (flyImageRenderBox != null) {
-        setState(() {
-          _flyWidgetOffset = Offset(
-            widget.imageOffset.dx +
-                ((imageRenderBoxSize?.width ?? 0) / 2) -
-                (flyRenderBoxSize?.width ?? 0) / 2,
-            widget.imageOffset.dy +
-                ((imageRenderBoxSize?.height ?? 0) / 2) -
-                (flyRenderBoxSize?.height ?? 0) / 2,
-          );
+    widget.animationController.addStatusListener((status) {
+      final flyAnimationController = AnimationController(vsync: this);
+      if (status.isAnimating) {
+        flyAnimationController.duration = widget.animationController.duration;
+        flyAnimationController.forward();
+        final OverlayEntry overlayEntry = createFlyOverlay(
+          flyAnimationController: flyAnimationController,
+        );
+        Overlay.of(context).insert(overlayEntry);
+        Future.delayed(Duration(milliseconds: milliSecond ?? 1000), () {
+          overlayEntry.remove();
+          overlayEntry.dispose();
+          flyAnimationController.dispose();
         });
       }
     });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    widget.animationController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final Offset currentOffset =
-        _getInterpolatedOffset(_positionAnimation.value);
-
-    return Positioned(
-      key: _overlayKey,
-      left: currentOffset.dx - _pathOffsets[0].dx + (_flyWidgetOffset?.dx ?? 0),
-      top: currentOffset.dy + (_flyWidgetOffset?.dy ?? 0),
-      child: Opacity(
-        opacity: _flyWidgetOffset == null ? 0 : _opacityAnimation.value,
-        child: widget.flyImage,
-      ),
-    );
-  }
-
-  Offset _getInterpolatedOffset(double animationValue) {
-    int startIndex = animationValue.floor();
-    int endIndex = (animationValue.ceil()).clamp(1, _pathOffsets.length - 1);
-    double t = animationValue - startIndex;
-
-    return Offset.lerp(_pathOffsets[startIndex], _pathOffsets[endIndex], t)!;
-  }
-
-  List<Offset> setPathOffset() {
-    final Offset startOffset = Offset.zero;
-    final List<Offset> pathOffsets = [Offset.zero];
-    for (int i = 1; i < 7; i++) {
-      final xOffset =
-          Random().nextInt(i * 5) - Random().nextInt(i * 5).toDouble();
-      final yOffset = pathOffsets[i - 1].dy - Random().nextInt(20) - 20;
-      pathOffsets.add(
-        Offset(xOffset, yOffset),
-      );
-    }
-    return pathOffsets.map((offset) {
-      return startOffset +
-          Offset(
-            offset.dx,
-            offset.dy * -(widget.flyHeight / pathOffsets.last.dy),
+    return widget.coverWidget == null
+        ? const SizedBox()
+        : Builder(
+            key: coverWidgetKey,
+            builder: (BuildContext context) {
+              return widget.coverWidget!;
+            },
           );
-    }).toList();
   }
 
-  Animation<double> setPositionAnimation() {
-    return Tween<double>(begin: 0, end: _pathOffsets.length - 1).animate(
-      CurvedAnimation(
-        parent: widget.animationController,
-        curve: Curves.easeInOut,
-      ),
-    )..addListener(() {
-        if (mounted) {
-          setState(() {});
-        }
-      });
+  OverlayEntry createFlyOverlay({
+    required AnimationController flyAnimationController,
+  }) {
+    final coverRenderBox =
+        coverWidgetKey.currentContext?.findRenderObject() as RenderBox?;
+    final coverWidgetOffset = coverRenderBox?.localToGlobal(Offset.zero);
+
+    return OverlayEntry(
+      builder: (context) {
+        return Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            _SingleFlyWidget(
+              coverWidgetKey: coverWidgetKey,
+              coverWidgetOffset: coverWidgetOffset ?? Offset.zero,
+              animationController: flyAnimationController,
+              flyHeight: widget.flyHeight,
+              child: widget.child,
+            ),
+            widget.coverWidget == null
+                ? const SizedBox()
+                : Positioned(
+                    left: coverWidgetOffset?.dx,
+                    top: coverWidgetOffset?.dy,
+                    child: widget.coverWidget!,
+                  ),
+          ],
+        );
+      },
+    );
   }
 }

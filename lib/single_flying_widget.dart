@@ -1,0 +1,122 @@
+part of 'flying_widget.dart';
+
+class _SingleFlyWidget extends StatefulWidget {
+  final GlobalKey coverWidgetKey;
+  final AnimationController animationController;
+  final Offset coverWidgetOffset;
+  final Widget child;
+  final double flyHeight;
+
+  const _SingleFlyWidget({
+    required this.coverWidgetKey,
+    required this.animationController,
+    required this.coverWidgetOffset,
+    required this.child,
+    required this.flyHeight,
+  });
+
+  @override
+  State<_SingleFlyWidget> createState() => _SingleFlyWidgetState();
+}
+
+class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
+  late final List<Offset> _shakePathOffsets;
+  late final Animation<double> _positionAnimation;
+  late final Animation<double> _opacityAnimation;
+  final GlobalKey _flyWidgetKey = GlobalKey();
+  Offset? _startOffset;
+
+  @override
+  void initState() {
+    _shakePathOffsets = setShakePathOffset();
+    _positionAnimation = setPositionAnimation();
+    _opacityAnimation =
+        Tween<double>(begin: 1, end: 0).animate(widget.animationController);
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final RenderBox? coverRenderBox = widget.coverWidgetKey.currentContext
+          ?.findRenderObject() as RenderBox?;
+      final coverRenderBoxSize = coverRenderBox?.size;
+      final RenderBox? flyRenderBox =
+          _flyWidgetKey.currentContext?.findRenderObject() as RenderBox?;
+      final flyRenderBoxSize = flyRenderBox?.size;
+      if (flyRenderBox != null) {
+        setState(() {
+          _startOffset = Offset(
+            widget.coverWidgetOffset.dx +
+                ((coverRenderBoxSize?.width ?? 0) / 2) -
+                (flyRenderBoxSize?.width ?? 0) / 2,
+            widget.coverWidgetOffset.dy +
+                ((coverRenderBoxSize?.height ?? 0) / 2) -
+                (flyRenderBoxSize?.height ?? 0) / 2,
+          );
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Offset currentOffset =
+        _getInterpolatedOffset(_positionAnimation.value);
+
+    return Positioned(
+      key: _flyWidgetKey,
+      left: currentOffset.dx,
+      top: currentOffset.dy,
+      child: Opacity(
+        opacity: _startOffset == null ? 0 : _opacityAnimation.value,
+        child: widget.child,
+      ),
+    );
+  }
+
+  Offset _getInterpolatedOffset(double animationValue) {
+    int startIndex = animationValue.floor();
+    int endIndex =
+        (animationValue.ceil()).clamp(1, _shakePathOffsets.length - 1);
+    double t = animationValue - startIndex;
+
+    return (Offset.lerp(
+              _shakePathOffsets[startIndex],
+              _shakePathOffsets[endIndex],
+              t,
+            ) ??
+            Offset.zero) +
+        (_startOffset ?? Offset.zero);
+  }
+
+  List<Offset> setShakePathOffset() {
+    final Offset startOffset = Offset.zero;
+    final List<Offset> pathOffsets = [Offset.zero];
+    for (int i = 1; i < 7; i++) {
+      final xOffset =
+          Random().nextInt(i * 5) - Random().nextInt(i * 5).toDouble();
+      final yOffset = pathOffsets[i - 1].dy - Random().nextInt(20) - 20;
+      pathOffsets.add(
+        Offset(xOffset, yOffset),
+      );
+    }
+    return pathOffsets.map((offset) {
+      return startOffset +
+          Offset(
+            offset.dx,
+            offset.dy * -(widget.flyHeight / pathOffsets.last.dy),
+          );
+    }).toList();
+  }
+
+  Animation<double> setPositionAnimation() {
+    return Tween<double>(begin: 0, end: _shakePathOffsets.length - 1).animate(
+      CurvedAnimation(
+        parent: widget.animationController,
+        curve: Curves.easeInOut,
+      ),
+    )..addListener(() {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+  }
+}
