@@ -6,6 +6,7 @@ class _SingleFlyWidget extends StatefulWidget {
   final Offset coverWidgetOffset;
   final Widget child;
   final double flyHeight;
+  final bool isTopStart;
 
   const _SingleFlyWidget({
     required this.coverWidgetKey,
@@ -13,6 +14,7 @@ class _SingleFlyWidget extends StatefulWidget {
     required this.coverWidgetOffset,
     required this.child,
     required this.flyHeight,
+    required this.isTopStart,
   });
 
   @override
@@ -37,20 +39,22 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final RenderBox? coverRenderBox = widget.coverWidgetKey.currentContext
           ?.findRenderObject() as RenderBox?;
-      final coverRenderBoxSize = coverRenderBox?.size;
+      final coverRenderBoxSize = coverRenderBox?.size ?? Size.zero;
       final RenderBox? flyRenderBox =
           _flyWidgetKey.currentContext?.findRenderObject() as RenderBox?;
-      final flyRenderBoxSize = flyRenderBox?.size;
+      final flyRenderBoxSize = flyRenderBox?.size ?? Size.zero;
+      final flyWidgetHeightAndHalfCoverWidgetHeight =
+          ((flyRenderBoxSize.height) + (coverRenderBoxSize.height) / 2);
+      final startXOffset = widget.coverWidgetOffset.dx +
+          (coverRenderBoxSize.width / 2) -
+          (flyRenderBoxSize.width) / 2;
+      final startYOffset = widget.coverWidgetOffset.dy +
+          (coverRenderBoxSize.height / 2) -
+          (flyRenderBoxSize.height) / 2 -
+          (widget.isTopStart ? flyWidgetHeightAndHalfCoverWidgetHeight : 0);
       if (flyRenderBox != null) {
         setState(() {
-          _startOffset = Offset(
-            widget.coverWidgetOffset.dx +
-                ((coverRenderBoxSize?.width ?? 0) / 2) -
-                (flyRenderBoxSize?.width ?? 0) / 2,
-            widget.coverWidgetOffset.dy +
-                ((coverRenderBoxSize?.height ?? 0) / 2) -
-                (flyRenderBoxSize?.height ?? 0) / 2,
-          );
+          _startOffset = Offset(startXOffset, startYOffset);
         });
       }
     });

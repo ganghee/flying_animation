@@ -7,6 +7,7 @@ part 'single_flying_widget.dart';
 class FlyingWidget extends StatefulWidget {
   final Widget? coverWidget;
   final double flyHeight;
+  final bool isTopStart;
   final AnimationController animationController;
   final Widget child;
 
@@ -14,6 +15,7 @@ class FlyingWidget extends StatefulWidget {
     super.key,
     this.coverWidget,
     this.flyHeight = 100,
+    this.isTopStart = false,
     required this.animationController,
     required this.child,
   });
@@ -90,6 +92,7 @@ class _FlyingWidgetState extends State<FlyingWidget>
               coverWidgetOffset: coverWidgetOffset ?? Offset.zero,
               animationController: flyAnimationController,
               flyHeight: widget.flyHeight,
+              isTopStart: widget.isTopStart,
               child: widget.child,
             ),
             widget.coverWidget == null
