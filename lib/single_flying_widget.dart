@@ -7,6 +7,7 @@ class _SingleFlyWidget extends StatefulWidget {
   final Widget child;
   final double flyHeight;
   final bool isTopStart;
+  final bool isShake;
 
   const _SingleFlyWidget({
     required this.coverWidgetKey,
@@ -15,6 +16,7 @@ class _SingleFlyWidget extends StatefulWidget {
     required this.child,
     required this.flyHeight,
     required this.isTopStart,
+    required this.isShake,
   });
 
   @override
@@ -92,22 +94,21 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
   }
 
   List<Offset> setShakePathOffset() {
-    final Offset startOffset = Offset.zero;
     final List<Offset> pathOffsets = [Offset.zero];
     for (int i = 1; i < 7; i++) {
-      final xOffset =
-          Random().nextInt(i * 5) - Random().nextInt(i * 5).toDouble();
+      final xOffset = widget.isShake
+          ? Random().nextInt(i * 5) - Random().nextInt(i * 5).toDouble()
+          : 0.0;
       final yOffset = pathOffsets[i - 1].dy - Random().nextInt(20) - 20;
       pathOffsets.add(
         Offset(xOffset, yOffset),
       );
     }
     return pathOffsets.map((offset) {
-      return startOffset +
-          Offset(
-            offset.dx,
-            offset.dy * -(widget.flyHeight / pathOffsets.last.dy),
-          );
+      return Offset(
+        offset.dx,
+        offset.dy * -(widget.flyHeight / pathOffsets.last.dy),
+      );
     }).toList();
   }
 

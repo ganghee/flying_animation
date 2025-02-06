@@ -8,6 +8,7 @@ class FlyingWidget extends StatefulWidget {
   final Widget? coverWidget;
   final double flyHeight;
   final bool isTopStart;
+  final bool isShake;
   final AnimationController animationController;
   final Widget child;
 
@@ -16,6 +17,7 @@ class FlyingWidget extends StatefulWidget {
     this.coverWidget,
     this.flyHeight = 100,
     this.isTopStart = false,
+    this.isShake = true,
     required this.animationController,
     required this.child,
   });
@@ -93,6 +95,7 @@ class _FlyingWidgetState extends State<FlyingWidget>
               animationController: flyAnimationController,
               flyHeight: widget.flyHeight,
               isTopStart: widget.isTopStart,
+              isShake: widget.isShake,
               child: widget.child,
             ),
             widget.coverWidget == null
