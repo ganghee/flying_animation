@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flying_animation/flying_image.dart';
+import 'package:flying_animation/flying_widget.dart';
 
 void main() {
   runApp(const MyApp());
@@ -53,10 +53,10 @@ class _MyHomePageState extends State<MyHomePage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FlyingImageWidget(
-              image: Icon(Icons.favorite, color: Colors.red),
-              flyImage: Icon(Icons.favorite, color: Colors.red),
+            FlyingWidget(
+              coverWidget: Icon(Icons.favorite, color: Colors.red),
               animationController: animationController,
+              child: Icon(Icons.favorite, color: Colors.red),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
