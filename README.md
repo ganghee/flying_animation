@@ -13,8 +13,8 @@ Also you can control speed using duration parameter of AnimationController.
 ```dart
 FlyingImageWidget(
   animationController: animationController,
-  image: Icon(Icons.favorite, color: Colors.red),
-  flyImage: Icon(Icons.favorite, color: Colors.red),
+  coverWidget: Icon(Icons.favorite, color: Colors.red),
+  child: Icon(Icons.favorite, color: Colors.red),
 )
 ```
 
