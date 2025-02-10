@@ -4,6 +4,14 @@ import 'package:flutter/material.dart';
 
 part 'single_flying_widget.dart';
 
+/// This widget is used to create a flying animation to top.
+/// [coverWidget] is the widget that covered by the flying widget.
+/// And the coverWidget not move.
+/// [flyHeight] is the height of max flying distance until disappear.
+/// [isTopStart] is the flag to determine the flying widget start from top or center.
+/// [isShake] is the flag to determine the flying widget shake or not.
+/// [animationController] is the controller to control the flying animation.
+/// [child] is the widget that will be flying.
 class FlyingWidget extends StatefulWidget {
   final Widget? coverWidget;
   final double flyHeight;
