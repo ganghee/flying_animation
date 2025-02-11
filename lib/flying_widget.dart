@@ -38,10 +38,14 @@ class _FlyingWidgetState extends State<FlyingWidget>
     with TickerProviderStateMixin {
   late final Animation<double> opacityAnimation =
       Tween<double>(begin: 1, end: 0).animate(widget.animationController);
+
+  /// [coverWidgetKey] is the key to get size.
   final GlobalKey coverWidgetKey = GlobalKey();
 
   @override
   initState() {
+    /// If the millisecond is null or 0, set the duration to 1 second.
+    /// the duration is used to control the animation speed.
     final int? milliSecond =
         widget.animationController.duration?.inMilliseconds;
     if (milliSecond == null || milliSecond == 0) {
