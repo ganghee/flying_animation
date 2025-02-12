@@ -1,5 +1,11 @@
 part of 'flying_widget.dart';
 
+/// This widget is used to create a flying animation to top.
+/// [coverWidgetKey] is the key to get size.
+/// [coverWidgetOffset] is the offset of the cover widget.
+/// [flyHeight] is the height of max flying distance until disappear.
+/// [isTopStart] is the flag to determine the flying widget start from top or center.
+/// [isShake] is the flag to determine the flying widget shake or not.
 class _SingleFlyWidget extends StatefulWidget {
   final GlobalKey coverWidgetKey;
   final AnimationController animationController;
@@ -38,6 +44,8 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
         Tween<double>(begin: 1, end: 0).animate(widget.animationController);
     super.initState();
 
+    /// Get the start offset of the flying widget.
+    /// The start offset is calculated based on the cover widget position and size.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final RenderBox? coverRenderBox = widget.coverWidgetKey.currentContext
           ?.findRenderObject() as RenderBox?;
@@ -80,6 +88,7 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
     );
   }
 
+  /// Get the interpolated offset based on the animation value.
   Offset _getInterpolatedOffset(double animationValue) {
     int startIndex = animationValue.floor();
     int endIndex =
@@ -95,6 +104,7 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
         (_startOffset ?? Offset.zero);
   }
 
+  /// Set the shake path offset.
   List<Offset> setShakePathOffset() {
     final List<Offset> pathOffsets = [Offset.zero];
     for (int i = 1; i < 7; i++) {
@@ -114,6 +124,7 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
     }).toList();
   }
 
+  /// According to [_shakePathOffsets], set the position animation.
   Animation<double> setPositionAnimation() {
     return Tween<double>(begin: 0, end: _shakePathOffsets.length - 1).animate(
       CurvedAnimation(

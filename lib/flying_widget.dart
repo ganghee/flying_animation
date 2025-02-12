@@ -14,8 +14,8 @@ part 'single_flying_widget.dart';
 /// [child] is the widget that will be flying.
 class FlyingWidget extends StatefulWidget {
   final Widget? coverWidget;
-  final double flyHeight;
   final bool isTopStart;
+  final double flyHeight;
   final bool isShake;
   final AnimationController animationController;
   final Widget child;
@@ -52,6 +52,9 @@ class _FlyingWidgetState extends State<FlyingWidget>
       widget.animationController.duration = const Duration(seconds: 1);
     }
 
+    /// Add status listener to the animation controller.
+    /// If the animation is animating, create the overlay entry.
+    /// The overlay entry is used to show the flying widget.
     widget.animationController.addStatusListener((status) {
       final flyAnimationController = AnimationController(vsync: this);
       if (status.isAnimating) {
@@ -61,6 +64,9 @@ class _FlyingWidgetState extends State<FlyingWidget>
           flyAnimationController: flyAnimationController,
         );
         Overlay.of(context).insert(overlayEntry);
+
+        /// If the millisecond is null or 0, set the duration to 1 second.
+        /// And then remove the overlay entry after the duration.
         Future.delayed(Duration(milliseconds: milliSecond ?? 1000), () {
           overlayEntry.remove();
           overlayEntry.dispose();
@@ -101,6 +107,7 @@ class _FlyingWidgetState extends State<FlyingWidget>
         return Stack(
           alignment: Alignment.center,
           children: <Widget>[
+            /// Create the flying widget.
             _SingleFlyWidget(
               coverWidgetKey: coverWidgetKey,
               coverWidgetOffset: coverWidgetOffset ?? Offset.zero,
