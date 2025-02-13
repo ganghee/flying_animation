@@ -89,6 +89,9 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
   }
 
   /// Get the interpolated offset based on the animation value.
+  /// The interpolated offset is calculated based on the current animation value.
+  /// [animationValue] is the current value of the position animation.
+  /// Return the interpolated offset.
   Offset _getInterpolatedOffset(double animationValue) {
     int startIndex = animationValue.floor();
     int endIndex =
