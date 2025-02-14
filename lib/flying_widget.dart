@@ -95,6 +95,8 @@ class _FlyingWidgetState extends State<FlyingWidget>
           );
   }
 
+  /// Create the overlay entry to show the flying widget.
+  /// [flyAnimationController] is the controller to control the flying animation.
   OverlayEntry createFlyOverlay({
     required AnimationController flyAnimationController,
   }) {
