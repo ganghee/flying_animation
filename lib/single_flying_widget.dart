@@ -77,6 +77,7 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
     final Offset currentOffset =
         _getInterpolatedOffset(_positionAnimation.value);
 
+    /// The flying widget is positioned based on the current offset.
     return Positioned(
       key: _flyWidgetKey,
       left: currentOffset.dx,
