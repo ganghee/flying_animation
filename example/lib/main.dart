@@ -59,6 +59,9 @@ class _MyHomePageState extends State<MyHomePage>
               child: Icon(Icons.favorite, color: Colors.red),
             ),
             const SizedBox(height: 20),
+
+            /// Click the button to trigger the flying widget animation.
+            /// reset and forword method is used to reset the animation and start the animation.
             ElevatedButton(
               onPressed: () {
                 if (!context.mounted) return;
