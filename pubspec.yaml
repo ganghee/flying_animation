@@ -1,11 +1,14 @@
 name: flying_animation
-description: "Animation package for fly effect"
-version: 0.0.4
+description: "A Flutter package that provides a beautiful flying animation effect for any widget. Perfect for like animations, celebrations, and UI feedback."
+version: 0.0.5
 homepage: "https://github.com/ganghee/fly_animation"
+repository: "https://github.com/ganghee/fly_animation.git"
+issue_tracker: "https://github.com/ganghee/fly_animation/issues"
+documentation: "https://github.com/ganghee/fly_animation/blob/main/README.md"
 
 environment:
   sdk: ^3.6.0
-  flutter: ">=1.17.0"
+  flutter: ">=3.0.0"
 
 dependencies:
   flutter:
@@ -15,3 +18,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
