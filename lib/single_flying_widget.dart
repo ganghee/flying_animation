@@ -33,8 +33,10 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
   late final List<Offset> _shakePathOffsets;
   late final Animation<double> _positionAnimation;
   late final Animation<double> _opacityAnimation;
+  late final Animation<double> _rotationAnimation;
   final GlobalKey _flyWidgetKey = GlobalKey();
   Offset? _startOffset;
+  double? _previousRotation;
 
   @override
   void initState() {
@@ -42,6 +44,12 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
     _positionAnimation = setPositionAnimation();
     _opacityAnimation =
         Tween<double>(begin: 1, end: 0).animate(widget.animationController);
+    _rotationAnimation = Tween<double>(begin: 0, end: pi / 4).animate(
+      CurvedAnimation(
+        parent: widget.animationController,
+        curve: Curves.easeInOutCubic,
+      ),
+    );
     super.initState();
 
     /// Get the start offset of the flying widget.
@@ -77,6 +85,16 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
     final Offset currentOffset =
         _getInterpolatedOffset(_positionAnimation.value);
 
+    final currentX = currentOffset.dx;
+    final previousX = _getInterpolatedOffset(_positionAnimation.value - 0.1).dx;
+    final isMovingRight = currentX > previousX;
+    final baseRotation = _rotationAnimation.value;
+    final targetRotation = isMovingRight ? baseRotation : -baseRotation;
+    final currentRotation = _previousRotation ?? targetRotation;
+    final smoothRotation =
+        ui.lerpDouble(currentRotation, targetRotation, 0.1) ?? currentRotation;
+    _previousRotation = smoothRotation;
+
     /// The flying widget is positioned based on the current offset.
     return Positioned(
       key: _flyWidgetKey,
@@ -84,7 +102,10 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
       top: currentOffset.dy,
       child: Opacity(
         opacity: _startOffset == null ? 0 : _opacityAnimation.value,
-        child: widget.child,
+        child: Transform.rotate(
+          angle: widget.isShake ? smoothRotation : 0,
+          child: widget.child,
+        ),
       ),
     );
   }
@@ -94,10 +115,18 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
   /// [animationValue] is the current value of the position animation.
   /// Return the interpolated offset.
   Offset _getInterpolatedOffset(double animationValue) {
+    if (_shakePathOffsets.isEmpty) return Offset.zero;
+
+    // Ensure animationValue is within valid range
+    animationValue = animationValue.clamp(0.0, _shakePathOffsets.length - 1.0);
+
     int startIndex = animationValue.floor();
     int endIndex =
-        (animationValue.ceil()).clamp(1, _shakePathOffsets.length - 1);
+        (animationValue.ceil()).clamp(0, _shakePathOffsets.length - 1);
     double t = animationValue - startIndex;
+
+    // Ensure startIndex is within valid range
+    startIndex = startIndex.clamp(0, _shakePathOffsets.length - 1);
 
     return (Offset.lerp(
               _shakePathOffsets[startIndex],

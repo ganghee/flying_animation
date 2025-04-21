@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
@@ -56,9 +57,11 @@ class _FlyingWidgetState extends State<FlyingWidget>
     /// If the animation is animating, create the overlay entry.
     /// The overlay entry is used to show the flying widget.
     widget.animationController.addStatusListener((status) {
-      final flyAnimationController = AnimationController(vsync: this);
       if (status.isAnimating) {
-        flyAnimationController.duration = widget.animationController.duration;
+        final flyAnimationController = AnimationController(
+          vsync: this,
+          duration: widget.animationController.duration,
+        );
         flyAnimationController.forward();
         final OverlayEntry overlayEntry = createFlyOverlay(
           flyAnimationController: flyAnimationController,
@@ -86,7 +89,7 @@ class _FlyingWidgetState extends State<FlyingWidget>
   @override
   Widget build(BuildContext context) {
     return widget.coverWidget == null
-        ? const SizedBox()
+        ? widget.child
         : Builder(
             key: coverWidgetKey,
             builder: (BuildContext context) {
