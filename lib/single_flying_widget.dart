@@ -1,21 +1,37 @@
-part of 'flying_widget.dart';
+import 'dart:math';
+import 'dart:ui' as ui;
 
-/// This widget is used to create a flying animation to top.
-/// [coverWidgetKey] is the key to get size.
-/// [coverWidgetOffset] is the offset of the cover widget.
-/// [flyHeight] is the height of max flying distance until disappear.
-/// [isTopStart] is the flag to determine the flying widget start from top or center.
-/// [isShake] is the flag to determine the flying widget shake or not.
-class _SingleFlyWidget extends StatefulWidget {
+import 'package:flutter/material.dart';
+
+/// A widget that creates a single flying animation effect.
+///
+/// This widget is used internally by [FlyingWidget] to create the actual
+/// flying animation effect. It handles the positioning, rotation, and
+/// opacity animations of the flying widget.
+class SingleFlyingWidget extends StatefulWidget {
+  /// The key used to get the size of the cover widget.
   final GlobalKey coverWidgetKey;
+
+  /// The controller for the flying animation.
   final AnimationController animationController;
+
+  /// The offset of the cover widget.
   final Offset coverWidgetOffset;
+
+  /// The widget that will be animated.
   final Widget child;
+
+  /// The maximum height the widget will fly to.
   final double flyHeight;
+
+  /// Whether the animation should start from the top.
   final bool isTopStart;
+
+  /// Whether the widget should shake during animation.
   final bool isShake;
 
-  const _SingleFlyWidget({
+  const SingleFlyingWidget({
+    super.key,
     required this.coverWidgetKey,
     required this.animationController,
     required this.coverWidgetOffset,
@@ -26,10 +42,10 @@ class _SingleFlyWidget extends StatefulWidget {
   });
 
   @override
-  State<_SingleFlyWidget> createState() => _SingleFlyWidgetState();
+  State<SingleFlyingWidget> createState() => _SingleFlyingWidgetState();
 }
 
-class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
+class _SingleFlyingWidgetState extends State<SingleFlyingWidget> {
   late final List<Offset> _shakePathOffsets;
   late final Animation<double> _positionAnimation;
   late final Animation<double> _opacityAnimation;
@@ -40,8 +56,14 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
 
   @override
   void initState() {
-    _shakePathOffsets = setShakePathOffset();
-    _positionAnimation = setPositionAnimation();
+    _initializeAnimations();
+    _calculateStartOffset();
+    super.initState();
+  }
+
+  void _initializeAnimations() {
+    _shakePathOffsets = _createShakePathOffsets();
+    _positionAnimation = _createPositionAnimation();
     _opacityAnimation =
         Tween<double>(begin: 1, end: 0).animate(widget.animationController);
     _rotationAnimation = Tween<double>(begin: 0, end: pi / 4).animate(
@@ -50,26 +72,29 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
         curve: Curves.easeInOutCubic,
       ),
     );
-    super.initState();
+  }
 
-    /// Get the start offset of the flying widget.
-    /// The start offset is calculated based on the cover widget position and size.
+  void _calculateStartOffset() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final RenderBox? coverRenderBox = widget.coverWidgetKey.currentContext
+      final coverRenderBox = widget.coverWidgetKey.currentContext
           ?.findRenderObject() as RenderBox?;
-      final coverRenderBoxSize = coverRenderBox?.size ?? Size.zero;
-      final RenderBox? flyRenderBox =
+      final coverSize = coverRenderBox?.size ?? Size.zero;
+
+      final flyRenderBox =
           _flyWidgetKey.currentContext?.findRenderObject() as RenderBox?;
-      final flyRenderBoxSize = flyRenderBox?.size ?? Size.zero;
-      final startXOffset = widget.coverWidgetOffset.dx +
-          (coverRenderBoxSize.width / 2) -
-          (flyRenderBoxSize.width) / 2;
-      final centerCoverYOffset = widget.coverWidgetOffset.dy +
-          (coverRenderBoxSize.height / 2) -
-          (flyRenderBoxSize.height) / 2;
-      final coverTopOffset =
-          widget.coverWidgetOffset.dy - flyRenderBoxSize.height;
+      final flySize = flyRenderBox?.size ?? Size.zero;
+
       if (flyRenderBox != null) {
+        final startXOffset = widget.coverWidgetOffset.dx +
+            (coverSize.width / 2) -
+            (flySize.width / 2);
+
+        final centerCoverYOffset = widget.coverWidgetOffset.dy +
+            (coverSize.height / 2) -
+            (flySize.height / 2);
+
+        final coverTopOffset = widget.coverWidgetOffset.dy - flySize.height;
+
         setState(() {
           _startOffset = Offset(
             startXOffset,
@@ -82,20 +107,9 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final Offset currentOffset =
-        _getInterpolatedOffset(_positionAnimation.value);
+    final currentOffset = _getInterpolatedOffset(_positionAnimation.value);
+    final rotation = _calculateRotation(currentOffset);
 
-    final currentX = currentOffset.dx;
-    final previousX = _getInterpolatedOffset(_positionAnimation.value - 0.1).dx;
-    final isMovingRight = currentX > previousX;
-    final baseRotation = _rotationAnimation.value;
-    final targetRotation = isMovingRight ? baseRotation : -baseRotation;
-    final currentRotation = _previousRotation ?? targetRotation;
-    final smoothRotation =
-        ui.lerpDouble(currentRotation, targetRotation, 0.1) ?? currentRotation;
-    _previousRotation = smoothRotation;
-
-    /// The flying widget is positioned based on the current offset.
     return Positioned(
       key: _flyWidgetKey,
       left: currentOffset.dx,
@@ -103,30 +117,37 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
       child: Opacity(
         opacity: _startOffset == null ? 0 : _opacityAnimation.value,
         child: Transform.rotate(
-          angle: widget.isShake ? smoothRotation : 0,
+          angle: widget.isShake ? rotation : 0,
           child: widget.child,
         ),
       ),
     );
   }
 
-  /// Get the interpolated offset based on the animation value.
-  /// The interpolated offset is calculated based on the current animation value.
-  /// [animationValue] is the current value of the position animation.
-  /// Return the interpolated offset.
+  double _calculateRotation(Offset currentOffset) {
+    final currentX = currentOffset.dx;
+    final previousX = _getInterpolatedOffset(_positionAnimation.value - 0.1).dx;
+    final isMovingRight = currentX > previousX;
+
+    final baseRotation = _rotationAnimation.value;
+    final targetRotation = isMovingRight ? baseRotation : -baseRotation;
+    final currentRotation = _previousRotation ?? targetRotation;
+    final smoothRotation =
+        ui.lerpDouble(currentRotation, targetRotation, 0.1) ?? currentRotation;
+
+    _previousRotation = smoothRotation;
+    return smoothRotation;
+  }
+
   Offset _getInterpolatedOffset(double animationValue) {
     if (_shakePathOffsets.isEmpty) return Offset.zero;
 
-    // Ensure animationValue is within valid range
     animationValue = animationValue.clamp(0.0, _shakePathOffsets.length - 1.0);
 
-    int startIndex = animationValue.floor();
-    int endIndex =
-        (animationValue.ceil()).clamp(0, _shakePathOffsets.length - 1);
+    int startIndex =
+        animationValue.floor().clamp(0, _shakePathOffsets.length - 1);
+    int endIndex = animationValue.ceil().clamp(0, _shakePathOffsets.length - 1);
     double t = animationValue - startIndex;
-
-    // Ensure startIndex is within valid range
-    startIndex = startIndex.clamp(0, _shakePathOffsets.length - 1);
 
     return (Offset.lerp(
               _shakePathOffsets[startIndex],
@@ -137,18 +158,16 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
         (_startOffset ?? Offset.zero);
   }
 
-  /// Set the shake path offset.
-  List<Offset> setShakePathOffset() {
+  List<Offset> _createShakePathOffsets() {
     final List<Offset> pathOffsets = [Offset.zero];
     for (int i = 1; i < 7; i++) {
       final xOffset = widget.isShake
           ? Random().nextInt(i * 5) - Random().nextInt(i * 5).toDouble()
           : 0.0;
       final yOffset = pathOffsets[i - 1].dy - Random().nextInt(20) - 20;
-      pathOffsets.add(
-        Offset(xOffset, yOffset),
-      );
+      pathOffsets.add(Offset(xOffset, yOffset));
     }
+
     return pathOffsets.map((offset) {
       return Offset(
         offset.dx,
@@ -157,8 +176,7 @@ class _SingleFlyWidgetState extends State<_SingleFlyWidget> {
     }).toList();
   }
 
-  /// According to [_shakePathOffsets], set the position animation.
-  Animation<double> setPositionAnimation() {
+  Animation<double> _createPositionAnimation() {
     return Tween<double>(begin: 0, end: _shakePathOffsets.length - 1).animate(
       CurvedAnimation(
         parent: widget.animationController,

@@ -1,24 +1,44 @@
-import 'dart:math';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 
-part 'single_flying_widget.dart';
+import 'single_flying_widget.dart';
 
-/// This widget is used to create a flying animation to top.
-/// [coverWidget] is the widget that covered by the flying widget.
-/// And the coverWidget not move.
-/// [flyHeight] is the height of max flying distance until disappear.
-/// [isTopStart] is the flag to determine the flying widget start from top or center.
-/// [isShake] is the flag to determine the flying widget shake or not.
-/// [animationController] is the controller to control the flying animation.
-/// [child] is the widget that will be flying.
+/// A widget that creates a flying animation effect for any child widget.
+///
+/// This widget allows you to create a flying animation where a widget
+/// appears to fly up from its original position while optionally shaking
+/// and fading out. It's commonly used for effects like "like" animations
+/// or other celebratory UI elements.
+///
+/// Example:
+/// ```dart
+/// FlyingWidget(
+///   coverWidget: Icon(Icons.favorite, color: Colors.red),
+///   child: Icon(Icons.favorite, color: Colors.red),
+///   animationController: animationController,
+///   flyHeight: 200.0,
+///   isShake: true,
+/// )
+/// ```
 class FlyingWidget extends StatefulWidget {
+  /// The widget that stays in place while the child flies away.
+  /// If null, the child will fly from its current position.
   final Widget? coverWidget;
+
+  /// Whether the flying animation should start from the top of the cover widget.
+  /// If false, it starts from the center.
   final bool isTopStart;
+
+  /// The maximum height the widget will fly to before disappearing.
   final double flyHeight;
+
+  /// Whether the widget should shake during the animation.
   final bool isShake;
+
+  /// The controller for the flying animation.
+  /// Use this to control when the animation starts and stops.
   final AnimationController animationController;
+
+  /// The widget that will be animated to fly away.
   final Widget child;
 
   const FlyingWidget({
@@ -37,53 +57,54 @@ class FlyingWidget extends StatefulWidget {
 
 class _FlyingWidgetState extends State<FlyingWidget>
     with TickerProviderStateMixin {
-  late final Animation<double> opacityAnimation =
-      Tween<double>(begin: 1, end: 0).animate(widget.animationController);
-
-  /// [coverWidgetKey] is the key to get size.
-  final GlobalKey coverWidgetKey = GlobalKey();
+  /// Key used to get the size of the cover widget.
+  final GlobalKey _coverWidgetKey = GlobalKey();
 
   @override
-  initState() {
-    /// If the millisecond is null or 0, set the duration to 1 second.
-    /// the duration is used to control the animation speed.
-    final int? milliSecond =
-        widget.animationController.duration?.inMilliseconds;
-    if (milliSecond == null || milliSecond == 0) {
-      widget.animationController.duration = const Duration(seconds: 1);
-    }
-
-    /// Add status listener to the animation controller.
-    /// If the animation is animating, create the overlay entry.
-    /// The overlay entry is used to show the flying widget.
-    widget.animationController.addStatusListener((status) {
-      if (status.isAnimating) {
-        final flyAnimationController = AnimationController(
-          vsync: this,
-          duration: widget.animationController.duration,
-        );
-        flyAnimationController.forward();
-        final OverlayEntry overlayEntry = createFlyOverlay(
-          flyAnimationController: flyAnimationController,
-        );
-        Overlay.of(context).insert(overlayEntry);
-
-        /// If the millisecond is null or 0, set the duration to 1 second.
-        /// And then remove the overlay entry after the duration.
-        Future.delayed(Duration(milliseconds: milliSecond ?? 1000), () {
-          overlayEntry.remove();
-          overlayEntry.dispose();
-          flyAnimationController.dispose();
-        });
-      }
-    });
+  void initState() {
+    _initializeAnimationController();
     super.initState();
   }
 
-  @override
-  void dispose() {
-    widget.animationController.dispose();
-    super.dispose();
+  void _initializeAnimationController() {
+    final duration = widget.animationController.duration;
+    if (duration == null || duration.inMilliseconds == 0) {
+      widget.animationController.duration = const Duration(seconds: 1);
+    }
+
+    widget.animationController.addStatusListener(_handleAnimationStatus);
+  }
+
+  void _handleAnimationStatus(AnimationStatus status) {
+    if (status.isAnimating) {
+      _createAndShowFlyingAnimation();
+    }
+  }
+
+  void _createAndShowFlyingAnimation() {
+    final flyAnimationController = AnimationController(
+      vsync: this,
+      duration: widget.animationController.duration,
+    );
+
+    flyAnimationController.forward();
+    final overlayEntry = _createFlyOverlay(flyAnimationController);
+    Overlay.of(context).insert(overlayEntry);
+
+    _scheduleOverlayRemoval(overlayEntry, flyAnimationController);
+  }
+
+  void _scheduleOverlayRemoval(
+    OverlayEntry overlayEntry,
+    AnimationController flyAnimationController,
+  ) {
+    final duration =
+        widget.animationController.duration ?? const Duration(seconds: 1);
+    Future.delayed(duration, () {
+      overlayEntry.remove();
+      overlayEntry.dispose();
+      flyAnimationController.dispose();
+    });
   }
 
   @override
@@ -91,47 +112,43 @@ class _FlyingWidgetState extends State<FlyingWidget>
     return widget.coverWidget == null
         ? widget.child
         : Builder(
-            key: coverWidgetKey,
-            builder: (BuildContext context) {
-              return widget.coverWidget!;
-            },
+            key: _coverWidgetKey,
+            builder: (BuildContext context) => widget.coverWidget!,
           );
   }
 
-  /// Create the overlay entry to show the flying widget.
-  /// [flyAnimationController] is the controller to control the flying animation.
-  OverlayEntry createFlyOverlay({
-    required AnimationController flyAnimationController,
-  }) {
+  OverlayEntry _createFlyOverlay(AnimationController flyAnimationController) {
     final coverRenderBox =
-        coverWidgetKey.currentContext?.findRenderObject() as RenderBox?;
+        _coverWidgetKey.currentContext?.findRenderObject() as RenderBox?;
     final coverWidgetOffset = coverRenderBox?.localToGlobal(Offset.zero);
 
     return OverlayEntry(
-      builder: (context) {
-        return Stack(
-          alignment: Alignment.center,
-          children: <Widget>[
-            /// Create the flying widget.
-            _SingleFlyWidget(
-              coverWidgetKey: coverWidgetKey,
-              coverWidgetOffset: coverWidgetOffset ?? Offset.zero,
-              animationController: flyAnimationController,
-              flyHeight: widget.flyHeight,
-              isTopStart: widget.isTopStart,
-              isShake: widget.isShake,
-              child: widget.child,
+      builder: (context) => Stack(
+        alignment: Alignment.center,
+        children: <Widget>[
+          SingleFlyingWidget(
+            coverWidgetKey: _coverWidgetKey,
+            coverWidgetOffset: coverWidgetOffset ?? Offset.zero,
+            animationController: flyAnimationController,
+            flyHeight: widget.flyHeight,
+            isTopStart: widget.isTopStart,
+            isShake: widget.isShake,
+            child: widget.child,
+          ),
+          if (widget.coverWidget != null)
+            Positioned(
+              left: coverWidgetOffset?.dx,
+              top: coverWidgetOffset?.dy,
+              child: widget.coverWidget!,
             ),
-            widget.coverWidget == null
-                ? const SizedBox()
-                : Positioned(
-                    left: coverWidgetOffset?.dx,
-                    top: coverWidgetOffset?.dy,
-                    child: widget.coverWidget!,
-                  ),
-          ],
-        );
-      },
+        ],
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    widget.animationController.removeStatusListener(_handleAnimationStatus);
+    super.dispose();
   }
 }
